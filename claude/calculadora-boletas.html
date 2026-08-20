@@ -54,7 +54,12 @@
   }
   h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
   .subtitulo { color: var(--suave); margin: 0; font-size: .95rem; }
-  #btnTema { flex: none; white-space: nowrap; }
+  #btnTema {
+    flex: none;
+    width: 2.5rem; height: 2.5rem; padding: 0;
+    border-radius: 50%; font-size: 1.1rem; line-height: 1;
+    display: grid; place-items: center;
+  }
   .tarjeta {
     background: var(--card);
     border: 1px solid var(--borde);
@@ -143,8 +148,9 @@
       <h1>Calculadora de boletas de honorarios</h1>
       <p class="subtitulo">Convierte un monto en UF a pesos y aplica la retención del impuesto (PPM).</p>
     </div>
-    <button type="button" id="btnTema" class="no-imprimir" aria-pressed="false">
-      <span id="iconoTema" aria-hidden="true">🌙</span> <span id="textoTema">Modo nocturno</span>
+    <button type="button" id="btnTema" class="no-imprimir" aria-pressed="false"
+            aria-label="Activar modo nocturno" title="Modo nocturno">
+      <span id="iconoTema" aria-hidden="true">🌙</span>
     </button>
   </header>
 
@@ -340,8 +346,10 @@ $('btnUF').addEventListener('click', async () => {
 const raiz = document.documentElement;
 function pintarBotonTema() {
   const oscuro = raiz.dataset.tema === 'oscuro';
+  const nombre = oscuro ? 'Modo diurno' : 'Modo nocturno';
   $('iconoTema').textContent = oscuro ? '☀️' : '🌙';
-  $('textoTema').textContent = oscuro ? 'Modo diurno' : 'Modo nocturno';
+  $('btnTema').setAttribute('aria-label', 'Activar ' + nombre.toLowerCase());
+  $('btnTema').setAttribute('title', nombre);
   $('btnTema').setAttribute('aria-pressed', String(oscuro));
 }
 pintarBotonTema();
