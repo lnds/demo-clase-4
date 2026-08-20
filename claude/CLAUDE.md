@@ -65,6 +65,40 @@ No cambiar sin una razón explícita: son decisiones de cálculo, no detalles de
   avisa y el valor queda ingresable a mano. El último valor usado se guarda en
   `localStorage` bajo `valorUF`, así que la página abre utilizable sin conexión.
 
+## Seguridad
+
+La página corre desde `file://`, sin servidor ni backend, así que la superficie es chica pero
+tiene tres bordes que hay que cuidar en cada cambio.
+
+- **Nada de `innerHTML` con texto de origen humano.** Hoy `#detalle` se arma por concatenación
+  y es seguro solo porque cada valor sale de `pesos`/`num` (números formateados) y las
+  etiquetas son literales. En cuanto una fila deba mostrar algo que el usuario escribió —el
+  nombre del cliente, un glosa, un RUT— hay que pasar a `createElement` + `textContent`, o se
+  abre un XSS de manual. Misma regla para `#nota` y los `.aviso`: ya usan `textContent`,
+  mantenlo así.
+- **La respuesta de mindicador.cl es dato externo, no fuente de verdad.** Valida forma y rango
+  antes de usarla (`Number.isFinite`, valor positivo) en vez de asignar `uf.valor` directo a un
+  campo. Solo `https`; nunca interpolar la respuesta en HTML ni pasarla por `eval`.
+- **Cero dependencias externas, y así debe quedar.** Sin CDN, sin `<script src>`, sin fuentes
+  remotas: no hay tercero que pueda leer lo que se tipea ni cadena de suministro que
+  comprometer. Agregar una librería es una decisión de seguridad, no de conveniencia.
+
+Además:
+
+- **La página no debe filtrar datos del usuario.** El único request saliente es la consulta de
+  UF, que lleva una fecha y nada más. Los montos, el cliente y el cálculo no salen del equipo;
+  cualquier feature que mande algo a un tercero (analítica, tracking, guardar en la nube)
+  rompe esa propiedad y requiere decisión explícita.
+- **`localStorage` solo para lo no sensible** (`valorUF`, `tema`). Nada de RUT, nombres ni
+  historial de boletas: es un archivo local sin cifrar, legible por cualquier página del mismo
+  origen `file://` y por quien tenga el equipo.
+- **Sin secretos en el archivo.** Todo lo que esté acá es visible: la API de UF es pública y no
+  lleva credenciales. Si alguna vez se necesita una API con token, va del lado de un servidor,
+  no inline.
+- **Nada de `eval`, `new Function` ni `setTimeout` con string.** Si la página llegara a
+  servirse por HTTP, agregar un `<meta http-equiv="Content-Security-Policy">` que permita solo
+  `'self'` y el origen de mindicador.
+
 ## Convenciones
 
 - Toda la interfaz y los comentarios van en español (formato `es-CL`: `$408.580`, `15,25%`,

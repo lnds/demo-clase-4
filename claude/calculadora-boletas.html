@@ -334,8 +334,14 @@ $('btnUF').addEventListener('click', async () => {
       aviso.textContent = 'Sin dato de UF para el ' + fechaLarga() + ' (¿fecha futura o anterior a 2013?).';
       return;
     }
-    $('valorUF').value = uf.valor;
-    guardar('valorUF', uf.valor);
+    // Dato externo: se valida forma y rango antes de usarlo.
+    const valor = Number(uf.valor);
+    if (!Number.isFinite(valor) || valor <= 0) {
+      aviso.textContent = 'La respuesta de mindicador.cl no trae un valor válido. Ingrésalo a mano.';
+      return;
+    }
+    $('valorUF').value = valor;
+    guardar('valorUF', valor);
     aviso.textContent = 'UF al ' + fechaLarga() + ' según mindicador.cl';
     calcular();
   } catch {
