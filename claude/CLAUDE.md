@@ -72,5 +72,11 @@ No cambiar sin una razón explícita: son decisiones de cálculo, no detalles de
 - La página no es un documento tributario; el cálculo es referencial y la retención efectiva
   es la vigente a la fecha de emisión en el SII.
 - No usar `alert`/`confirm`/`prompt`: el estado se comunica en los `<p class="aviso">`.
-- Paleta y tipografía viven en variables CSS bajo `:root`, con variante para
-  `prefers-color-scheme: dark`. Cualquier color nuevo se define ahí, en los dos modos.
+- Paleta y tipografía viven en variables CSS: `:root` es el tema claro y
+  `:root[data-tema="oscuro"]` el nocturno. Cualquier color nuevo se define en ambos bloques
+  y se usa por variable, nunca literal, o el otro tema queda roto.
+- El tema lo fija un script inline en el `<head>`, antes del primer pintado, para que no
+  parpadee: usa la preferencia guardada en `localStorage` bajo `tema` y, si no hay,
+  `prefers-color-scheme`. El botón solo alterna ese atributo.
+- `localStorage` puede lanzar bajo `file://` según el navegador; accede siempre por los
+  helpers `leer()` y `guardar()`, que lo envuelven en try/catch.
