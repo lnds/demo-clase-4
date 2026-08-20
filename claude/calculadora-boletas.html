@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de boletas de honorarios</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --texto: #1b1f24;
+    --suave: #5d6672;
+    --borde: #dde1e7;
+    --acento: #1f6feb;
+    --acento-suave: #e8f0fe;
+    --destaca: #0f7b46;
+    --alerta: #8a4b00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c;
+      --card: #1c2027;
+      --texto: #e8eaed;
+      --suave: #9aa3b0;
+      --borde: #2c323b;
+      --acento: #58a6ff;
+      --acento-suave: #16283f;
+      --destaca: #4cc38a;
+      --alerta: #e3b341;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2rem 1rem 4rem;
+    background: var(--bg);
+    color: var(--texto);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+  .subtitulo { color: var(--suave); margin: 0 0 1.5rem; font-size: .95rem; }
+  .tarjeta {
+    background: var(--card);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  fieldset { border: 0; padding: 0; margin: 0 0 1.25rem; }
+  legend, .etiqueta {
+    font-weight: 600; font-size: .85rem; letter-spacing: .02em;
+    text-transform: uppercase; color: var(--suave);
+    padding: 0; margin-bottom: .5rem; display: block;
+  }
+  .opciones { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .opcion {
+    flex: 1 1 180px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: .7rem .9rem;
+    cursor: pointer;
+    display: flex; gap: .6rem; align-items: flex-start;
+  }
+  .opcion:has(input:checked) {
+    border-color: var(--acento);
+    background: var(--acento-suave);
+  }
+  .opcion input { margin-top: .2rem; accent-color: var(--acento); }
+  .opcion small { display: block; color: var(--suave); font-size: .8rem; }
+  .campos { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .campo { flex: 1 1 200px; }
+  input[type="number"], select {
+    width: 100%;
+    padding: .6rem .7rem;
+    font-size: 1rem;
+    color: var(--texto);
+    background: var(--bg);
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible {
+    outline: 2px solid var(--acento); outline-offset: 2px;
+  }
+  .fila-uf { display: flex; gap: .5rem; align-items: flex-end; }
+  .fila-uf .campo { flex: 1; }
+  button {
+    font: inherit;
+    padding: .6rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--borde);
+    background: var(--card);
+    color: var(--texto);
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--acento); color: var(--acento); }
+  .aviso { font-size: .8rem; color: var(--suave); margin: .4rem 0 0; min-height: 1.2em; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: .55rem 0; border-bottom: 1px solid var(--borde); }
+  td.monto { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.total td { border-bottom: 0; font-weight: 700; font-size: 1.15rem; padding-top: .9rem; }
+  tr.total td.monto { color: var(--destaca); }
+  tr.resta td { color: var(--suave); }
+  .nota {
+    margin-top: 1rem; padding: .8rem .9rem;
+    border-left: 3px solid var(--alerta);
+    background: color-mix(in srgb, var(--alerta) 8%, transparent);
+    font-size: .87rem;
+  }
+  .acciones { display: flex; gap: .5rem; justify-content: flex-end; }
+  footer { color: var(--suave); font-size: .8rem; text-align: center; margin-top: 2rem; }
+  @media print {
+    body { background: #fff; color: #000; padding: 0; }
+    .no-imprimir { display: none !important; }
+    .tarjeta { border: 0; padding: 0; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Calculadora de boletas de honorarios</h1>
+  <p class="subtitulo">Convierte un monto en UF a pesos y aplica la retención del impuesto (PPM).</p>
+
+  <form class="tarjeta no-imprimir" id="formulario" autocomplete="off">
+    <fieldset>
+      <legend>¿Quién retiene el impuesto?</legend>
+      <div class="opciones">
+        <label class="opcion">
+          <input type="radio" name="retiene" value="cliente" checked>
+          <span><strong>El cliente retiene</strong><small>Empresa o institución. Te paga el líquido y entera la retención al SII.</small></span>
+        </label>
+        <label class="opcion">
+          <input type="radio" name="retiene" value="emisor">
+          <span><strong>Retengo yo</strong><small>Cliente persona natural o extranjero. Recibes el total y pagas el PPM en tu F29.</small></span>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>El monto en UF que indico es</legend>
+      <div class="opciones">
+        <label class="opcion">
+          <input type="radio" name="base" value="bruto" checked>
+          <span><strong>Bruto</strong><small>Es el valor de la boleta, antes de impuesto.</small></span>
+        </label>
+        <label class="opcion">
+          <input type="radio" name="base" value="liquido">
+          <span><strong>Líquido</strong><small>Es lo que quiero recibir; calcula la boleta hacia atrás.</small></span>
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="campos">
+      <div class="campo">
+        <label class="etiqueta" for="montoUF">Monto en UF</label>
+        <input type="number" id="montoUF" min="0" step="0.01" value="10" inputmode="decimal">
+      </div>
+      <div class="campo">
+        <label class="etiqueta" for="fecha">Fecha de la boleta</label>
+        <input type="date" id="fecha">
+      </div>
+    </div>
+
+    <div class="campos" style="margin-top:1rem">
+      <div class="campo">
+        <label class="etiqueta" for="valorUF">Valor de la UF (pesos)</label>
+        <div class="fila-uf">
+          <div class="campo"><input type="number" id="valorUF" min="0" step="0.01" placeholder="Ej: 39500,00" inputmode="decimal"></div>
+          <button type="button" id="btnUF">Obtener UF</button>
+        </div>
+        <p class="aviso" id="avisoUF">El botón trae la UF de la fecha indicada arriba.</p>
+      </div>
+      <div class="campo">
+        <label class="etiqueta" for="tasa">Tasa de retención</label>
+        <input type="number" id="tasa" min="0" max="100" step="0.01">
+        <p class="aviso" id="avisoTasa"></p>
+      </div>
+    </div>
+  </form>
+
+  <section class="tarjeta" id="resultado" hidden>
+    <h2 class="etiqueta" style="margin-bottom:.75rem">Detalle del cálculo</h2>
+    <table>
+      <tbody id="detalle"></tbody>
+    </table>
+    <p class="nota" id="nota"></p>
+    <div class="acciones no-imprimir" style="margin-top:1rem">
+      <button type="button" id="btnImprimir">Imprimir detalle</button>
+    </div>
+  </section>
+
+  <footer class="no-imprimir">
+    La retención es un pago provisional (PPM) a cuenta del impuesto global complementario.
+    En la Operación Renta parte de ella se destina a tus cotizaciones previsionales.
+  </footer>
+</main>
+
+<script>
+// Tasas de retención de honorarios según la gradualidad de la Ley 21.133.
+const TASAS = {
+  2019: 10, 2020: 10.75, 2021: 11.5, 2022: 12.25, 2023: 13,
+  2024: 13.75, 2025: 14.5, 2026: 15.25, 2027: 16, 2028: 17
+};
+const ANIO_MAX = 2028;
+
+const $ = (id) => document.getElementById(id);
+const pesos = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+const num = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 2 });
+
+const ANIO_MIN = Math.min(...Object.keys(TASAS).map(Number));
+const fecha = $('fecha');
+const hoy = new Date();
+fecha.value = [hoy.getFullYear(), hoy.getMonth() + 1, hoy.getDate()]
+  .map((n, i) => String(n).padStart(i ? 2 : 4, '0')).join('-');
+
+// Fecha local, sin pasar por UTC: "2026-08-20" -> [2026, 8, 20].
+const partes = () => (fecha.value || '').split('-').map(Number);
+const anioBoleta = () => {
+  const a = partes()[0];
+  return a ? Math.min(Math.max(a, ANIO_MIN), ANIO_MAX) : ANIO_MAX;
+};
+const fechaLarga = () => {
+  const [a, m, d] = partes();
+  return a ? new Date(a, m - 1, d).toLocaleDateString('es-CL') : '';
+};
+
+function aplicarTasaDelAnio() {
+  const a = anioBoleta();
+  $('tasa').value = TASAS[a];
+  $('avisoTasa').textContent = 'Tasa legal del año ' + a + '. Puedes ajustarla.';
+}
+aplicarTasaDelAnio();
+
+const ufGuardada = localStorage.getItem('valorUF');
+if (ufGuardada) $('valorUF').value = ufGuardada;
+
+function calcular() {
+  const montoUF = parseFloat($('montoUF').value);
+  const valorUF = parseFloat($('valorUF').value);
+  const tasa = parseFloat($('tasa').value) / 100;
+  const clienteRetiene = document.querySelector('input[name=retiene]:checked').value === 'cliente';
+  const esBruto = document.querySelector('input[name=base]:checked').value === 'bruto';
+
+  if (!(montoUF > 0) || !(valorUF > 0) || !(tasa >= 0 && tasa < 1)) {
+    $('resultado').hidden = true;
+    return;
+  }
+
+  const monto = montoUF * valorUF;
+  // Con retención del cliente y monto líquido, la boleta se calcula hacia atrás.
+  // Si retiene el emisor, recibe el total, así que bruto y líquido coinciden.
+  const bruto = (esBruto || !clienteRetiene) ? monto : monto / (1 - tasa);
+  const retencion = bruto * tasa;
+  const recibes = clienteRetiene ? bruto - retencion : bruto;
+
+  const filas = [
+    ['Monto en UF', num.format(montoUF) + ' UF'],
+    ['Valor UF al ' + fechaLarga(), pesos.format(valorUF)],
+    ['Monto bruto de la boleta', pesos.format(bruto)],
+  ];
+  if (clienteRetiene) {
+    filas.push(['Retención del cliente (' + num.format(tasa * 100) + '%)', '− ' + pesos.format(retencion)]);
+  } else {
+    filas.push(['PPM que debes declarar (' + num.format(tasa * 100) + '%)', pesos.format(retencion)]);
+  }
+
+  $('detalle').innerHTML = filas.map(([t, v]) =>
+    '<tr' + (v.startsWith('−') ? ' class="resta"' : '') + '><td>' + t + '</td><td class="monto">' + v + '</td></tr>'
+  ).join('') +
+    '<tr class="total"><td>' + (clienteRetiene ? 'Líquido a recibir' : 'Recibes ahora') +
+    '</td><td class="monto">' + pesos.format(recibes) + '</td></tr>';
+
+  $('nota').textContent = clienteRetiene
+    ? 'Emites la boleta por ' + pesos.format(bruto) + '. El cliente retiene ' + pesos.format(retencion) +
+      ' y lo declara al SII a tu nombre.'
+    : 'Recibes los ' + pesos.format(bruto) + ' completos, pero debes declarar y pagar ' +
+      pesos.format(retencion) + ' como PPM en el Formulario 29 del mes siguiente.';
+
+  $('resultado').hidden = false;
+}
+
+$('formulario').addEventListener('input', (e) => {
+  if (e.target === fecha) aplicarTasaDelAnio();
+  if (e.target === $('valorUF')) localStorage.setItem('valorUF', e.target.value);
+  calcular();
+});
+
+$('btnUF').addEventListener('click', async () => {
+  const aviso = $('avisoUF');
+  const [a, m, d] = partes();
+  if (!a) { aviso.textContent = 'Indica primero la fecha de la boleta.'; return; }
+  aviso.textContent = 'Consultando…';
+  try {
+    const ddmmaaaa = [d, m].map((n) => String(n).padStart(2, '0')).join('-') + '-' + a;
+    const r = await fetch('https://mindicador.cl/api/uf/' + ddmmaaaa);
+    const json = await r.json();
+    const uf = (json.serie || [])[0];
+    if (!uf) {
+      aviso.textContent = 'Sin dato de UF para el ' + fechaLarga() + ' (¿fecha futura o anterior a 2013?).';
+      return;
+    }
+    $('valorUF').value = uf.valor;
+    localStorage.setItem('valorUF', uf.valor);
+    aviso.textContent = 'UF al ' + fechaLarga() + ' según mindicador.cl';
+    calcular();
+  } catch {
+    aviso.textContent = 'No se pudo consultar (¿sin conexión?). Ingresa el valor a mano.';
+  }
+});
+
+$('btnImprimir').addEventListener('click', () => window.print());
+
+calcular();
+</script>
+</body>
+</html>
